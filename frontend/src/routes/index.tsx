@@ -1,9 +1,12 @@
+import { useState } from "react";
+import { toast } from "sonner";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   Sparkles,
   Trophy,
   Headphones,
   Languages,
+  ChevronDown,
   ShieldCheck,
   Boxes,
   ArrowRight,
@@ -26,6 +29,18 @@ export const Route = createFileRoute("/")({
 });
 
 function Landing() {
+  const [activeLang, setActiveLang] = useState(() => {
+    if (typeof document !== "undefined") {
+      const match = document.cookie.match(/googtrans=\/en\/([^;]+)/);
+      if (match) {
+        const code = match[1];
+        if (code === "ta") return "Tamil";
+        if (code === "hi") return "Hindi";
+      }
+    }
+    return "English";
+  });
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
   return (
     <div className="min-h-dvh">
       {/* nav */}
@@ -42,12 +57,67 @@ function Landing() {
             <a href="#labs" className="hover:text-foreground transition-colors">AR/VR Labs</a>
             <a href="#stats" className="hover:text-foreground transition-colors">Impact</a>
           </nav>
-          <Link
-            to="/dashboard"
-            className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90 transition shadow-[var(--glow-lime)]"
-          >
-            Enter platform <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          <div className="flex items-center gap-3">
+            {/* Hidden Google Translate Widget */}
+            <div id="google_translate_element" className="hidden"></div>
+
+            {/* Custom Language Selector Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowLangDropdown(!showLangDropdown)}
+                className="flex items-center gap-1.5 rounded-full border border-border bg-surface px-2.5 py-1 text-xs font-semibold hover:bg-accent transition cursor-pointer text-muted-foreground hover:text-foreground"
+              >
+                <Languages className="h-3.5 w-3.5 text-primary" />
+                <span>{activeLang}</span>
+                <ChevronDown className="h-3 w-3" />
+              </button>
+
+              {showLangDropdown && (
+                <div className="absolute right-0 mt-2 w-32 rounded-xl border border-border bg-card/95 p-1.5 shadow-xl z-50 backdrop-blur-xl animate-in fade-in slide-in-from-top-2 duration-150 text-left">
+                  {[
+                    { code: "en", name: "English" },
+                    { code: "ta", name: "Tamil" },
+                    { code: "hi", name: "Hindi" },
+                  ].map((lang) => (
+                    <button
+                      key={lang.code}
+                      onClick={() => {
+                        setActiveLang(lang.name);
+                        setShowLangDropdown(false);
+                        toast.success(`Translating to ${lang.name}...`);
+                        
+                        // Control the hidden Google Translate widget
+                        const combo = document.querySelector('.goog-te-combo') as HTMLSelectElement;
+                        if (combo) {
+                          combo.value = lang.code;
+                          combo.dispatchEvent(new Event('change'));
+                        } else {
+                          // Fallback if widget hasn't loaded yet
+                          document.cookie = `googtrans=/en/${lang.code}; path=/`;
+                          document.cookie = `googtrans=/en/${lang.code}; path=/; domain=${window.location.hostname}`;
+                          window.location.reload();
+                        }
+                      }}
+                      className={`w-full text-left rounded-lg px-2.5 py-1.5 text-xs transition-colors cursor-pointer block ${
+                        activeLang === lang.name
+                          ? "bg-primary/20 text-primary font-bold"
+                          : "hover:bg-accent text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {lang.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <Link
+              to="/dashboard"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90 transition shadow-[var(--glow-lime)]"
+            >
+              Enter platform <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </div>
       </header>
 

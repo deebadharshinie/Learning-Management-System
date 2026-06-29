@@ -7,7 +7,17 @@ import { toast } from "sonner";
 
 export function AppShell({ children }: { children?: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [activeLang, setActiveLang] = useState("English");
+  const [activeLang, setActiveLang] = useState(() => {
+    if (typeof document !== "undefined") {
+      const match = document.cookie.match(/googtrans=\/en\/([^;]+)/);
+      if (match) {
+        const code = match[1];
+        if (code === "ta") return "Tamil";
+        if (code === "hi") return "Hindi";
+      }
+    }
+    return "English";
+  });
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
